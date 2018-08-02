@@ -1,0 +1,8 @@
+book_filename: "rapport_OT_mobilites"
+repo: https://github.com/observatoire-territoires/rapport-OT-mobilites
+delete_merged_file: true
+output_dir: "docs"
+rmd_files: ["index.Rmd", "01-intro.Rmd", "02-determinants-indiv.Rmd", "03-espaces-excédentaires-et-déficitaires.Rmd", "05-synthèse.Rmd", "06-bibliographie.Rmd"]
+language:
+  ui:
+    chapter_name: "Chapitre "

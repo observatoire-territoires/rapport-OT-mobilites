@@ -1,0 +1,139 @@
+# Introduction {#intro}
+
+Chaque année, un peu plus de 11% des personnes résidant en France déménagent pour un autre logement. Sur 100 personnes mobiles, 35 changent de logement au sein de la même commune, 36 changent de commune mais restent dans le même département, 11 changent de département au sein de la même région, et 18 changent de région . Les mobilités résidentielles sont ainsi à l’origine d’un redéploiement de la population qui modifie les équilibres territoriaux.
+
+La compréhension de ces dynamiques migratoires et de leurs effets spatiaux est ainsi au cœur des enjeux actuels et futurs de l’aménagement des territoires. Dans ce rapport, c’est à une échelle supra-communale que ces enjeux seront envisagés : bien que l’étude des trajectoires résidentielles locales soit utile pour adapter la composition du parc de logements aux besoins, ce document prend plutôt le parti d’une analyse de plus large échelle (passage d’une agglomération à sa périphérie, d’une aire urbaine à une autre, d’un département ou d’une région à l’autre, etc.), qui permet de mesurer les différences d’attractivité des territoires, et en retour l’effet des mobilités résidentielles sur la différenciation de ces derniers.
+
+Car s’il existe d’un côté des espaces attractifs, souvent depuis plusieurs décennies, où croissance migratoire et dynamisme économique s’entraînent mutuellement , existent aussi de l’autre des zones en décroissance où le déficit migratoire est autant une conséquence qu’un facteur aggravant de difficultés souvent liées à la désindustrialisation. Or, les mobilités résidentielles internes au pays sont un jeu à somme nulle : un ménage qui s’installe quelque part, c’est aussi un ménage qui a quitté un autre territoire. **Les mobilités résidentielles sont donc au cœur des enjeux de la cohésion territoriale.**
+
+Certes, l’attractivité migratoire n’est pas le seul ressort du dynamisme démographique local : les évolutions naturelles de la population (naissances, décès), très contrastées selon les espaces, y contribuent aussi largement. En fait, c’est la combinaison – variable selon les territoires – de ces deux dynamiques, migratoire et naturelle, qui explique les évolutions locales de la population . Néanmoins, une analyse spécifique du phénomène migratoire est intéressante pour au moins deux raisons. D’une part, la géographie des mobilités résidentielles a été en grande partie reconfigurée au cours des cinquante dernières années, quand celle du solde naturel est au contraire caractérisée par sa stabilité : les évolutions des mobilités expliquent donc largement les trajectoires récentes des espaces. D’autre part, l’attractivité étant depuis peu devenue une préoccupation grandissante des collectivités territoriales, il est utile d’en montrer le cadre et les effets à l’échelle nationale : qui sont les Français qui déménagent, où vont-ils, et quelles conséquences ont ces mobilités sur la cohésion des territoires : conduisent-elles à les homogénéiser, ou au contraire à accentuer les disparités ?
+
+
+
+```{r catalogue_fonctions, echo=F, message=F, warning=F}
+
+
+# fonction création contours supracomm
+crea_carto_SUPRACOMM <- function(CARTO_COMM,NIVGEO, SG) {
+  
+  # création de la table supra-communale avec tous les niveaux supra comm associés
+  comm_supra <- merge(CARTO_COMM, table_supracom_2016_v2, by.x = "DEPCOM", by.y = "CODGEO", all.x = TRUE)
+  # aggrégation de la table supra-comm
+  NIVGEO_geo <- comm_supra %>%  dplyr::select(!!rlang::sym(NIVGEO)) %>% group_by(!!rlang::sym(NIVGEO)) %>% summarize() 
+  
+  # simplification des geometries
+  library(rmapshaper)
+  NIVGEO_geo.s <- ms_simplify(input = as(NIVGEO_geo, 'Spatial'), keep = SG) %>% st_as_sf()
+  
+  # centroides
+  NIVGEO_geo.ctr <- NIVGEO_geo %>% st_centroid( of_largest_polygon = F) %>%
+    mutate(x_ctr = map_dbl(geometry, ~st_centroid(.x)[[1]]),
+           y_ctr = map_dbl(geometry, ~st_centroid(.x)[[2]]))
+  
+  # sortie des couches en dur
+  assign(paste0("geo_poly_",NIVGEO), NIVGEO_geo.s, envir=.GlobalEnv)
+  assign(paste0("geo_ctr_",NIVGEO), NIVGEO_geo.ctr, envir=.GlobalEnv)
+  
+}
+
+
+
+
+#### calcul des indicateurs histodemo ####
+
+calcul_histodemo_NIVGEO <- function( NIVGEO) {
+  
+  # stats evol pop par periode intercensitaire 
+  NIVGEO_indics_histodemo <- COMM_HISTO_POP %>%
+    #filter(!substr(CODGEO,1,2) %in% '97') %>%
+    left_join(table_supracom_2016_v2, by = c("CODGEO" = "CODGEO")) %>%
+    mutate(POPDEB0914 = POP_2009, POPFIN0914 = POP_2014,
+           POPDEB9909 = POP_1999, POPFIN9909 = POP_2009,
+           POPDEB9099 = POP_1990, POPFIN9099 = POP_1999,
+           POPDEB8290 = POP_1982, POPFIN8290 = POP_1990,
+           POPDEB7582 = POP_1975, POPFIN7582 = POP_1982,
+           POPDEB6875 = POP_1968, POPFIN6875 = POP_1975)  %>%
+    dplyr::select(NIVGEO,ends_with("0914"),ends_with("9909"),ends_with("9099"),ends_with("8290"),ends_with("7582"),ends_with("6875"))  %>%
+    group_by(!!rlang::sym(NIVGEO)) %>%
+    summarise_if(is.numeric,funs(sum)) %>%
+    gather(indic,POP, -!!rlang::sym(NIVGEO)) %>%
+    mutate(periode = str_sub(indic,-4,-1),
+           indic = substr(indic,1,nchar(indic)-4)) %>%
+    spread(indic,POP) %>%
+    mutate(annee_debut = case_when(substr(periode,1,2) <20 ~ as.numeric(paste0(20,substr(periode,1,2))),
+                                   TRUE ~ as.numeric(paste0(19,substr(periode,1,2))) )) %>%
+    mutate(annee_fin = case_when(str_sub(periode,-2,-1) <20 ~ as.numeric(paste0(20,str_sub(periode,-2,-1))),
+                                 TRUE ~ as.numeric(paste0(19,str_sub(periode,-2,-1))) )) %>%
+    mutate(EVOLPOP = POPFIN - POPDEB,
+           SN = NAIS - DECE,
+           SM = EVOLPOP - SN) %>%
+    mutate(nb_annees = annee_fin - annee_debut,
+           TCAMPOP = (POPFIN / POPDEB) ^(1/nb_annees)-1,
+           TCAMPOP_SN = SN * TCAMPOP / EVOLPOP,
+           TCAMPOP_SM = TCAMPOP - TCAMPOP_SN) %>%
+    mutate(periode_annees = paste0(annee_debut,"_",annee_fin),
+           periode_milieu = annee_fin - (annee_fin - annee_debut)/2) 
+  
+  
+  
+  # création de la table
+  assign(paste0("indics_histodemo_",NIVGEO), NIVGEO_indics_histodemo, envir=.GlobalEnv)
+  
+}
+
+
+
+
+# récupération des libellés
+
+libelles_histodemo_NIVGEO <- function(TABLE, NIVGEO) {
+  
+  #df <- paste0("indics_histodemo_",NIVGEO)
+  
+  # référentiels
+  ref_CATAEU2010 <-
+    tribble(
+      ~CATAEU2010, ~LIB_CATAEU2010,
+      '111' , "Grands pôles urbains",
+      '112' , "Couronne des grands pôles urbains",
+      "120" , "Communes multipolarisées",
+      '211' , "Moyens pôles", 
+      '212' , "Couronne des moyens pôles",
+      '221' , "Petits pôles",
+      '222' , "Couronne des petits pôles",
+      '300' , "Autres communes multipolarisées",
+      '400' , "Communes isolées hors influence des pôles")
+  
+  ref_GRIDDENS <-
+    tribble(
+      ~TYPEDENS, ~LIB_TYPEDENS,
+      "1" , "Dense",
+      "2" , "Densité intermédiaire",
+      "3" , "Peu dense",
+      "4" , "Très peu dense")
+  
+  REF_libelles <- 
+    libelles_supracom_2016 %>%
+    bind_rows(ref_CATAEU2010 %>% mutate(NIVGEO = "CATAEU2010") %>% rename(CODGEO = CATAEU2010, LIBGEO = LIB_CATAEU2010)) %>%
+    bind_rows(ref_GRIDDENS %>% mutate(NIVGEO = "TYPEDENS") %>% rename(CODGEO = TYPEDENS, LIBGEO = LIB_TYPEDENS)) %>%
+    # libellés communes
+    bind_rows(table_supracom_2016_v2 %>% dplyr::select(CODGEO,LIBGEO) %>%
+                mutate(NIVGEO = "COMM") ) %>%
+    rename(NIVGEO_REF = NIVGEO)
+  
+  
+  NIVGEO_indics_histodemo <- TABLE %>% rename(NIVGEO = NIVGEO) %>%
+    left_join(REF_libelles %>% filter(NIVGEO_REF == NIVGEO) %>% dplyr::select(CODGEO, LIBGEO),
+              by = c( 'NIVGEO' = 'CODGEO')  ) %>%
+    #ordre variables dans dataframe
+    dplyr::select(NIVGEO, LIBGEO, everything())
+  
+  # NIVGEO_indics_histodemo <- NIVGEO_indics_histodemo %>% 
+  #   rename(!!rlang::sym(paste0("LIB_",NIVGEO)) = LIBGEO)
+  
+  # création de la table
+  assign(paste0("indics_histodemo_",NIVGEO), NIVGEO_indics_histodemo, envir=.GlobalEnv)
+}
+
+```
+

@@ -7,3 +7,8 @@ C'était vraiment très intéressant.
    </iframe>
 </div>
  
+ appli de diagnostic :
+
+<div align="center">
+<iframe width='1100' height='1000' src="https://observatoire-territoires.shinyapps.io/shiny_migres_v2/"  frameborder="0" allowfullscreen></iframe>
+</div>

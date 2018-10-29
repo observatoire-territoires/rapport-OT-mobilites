@@ -1,3 +1,22 @@
 # Synthèse
 
 C'était vraiment très intéressant.
+
+<div align="center">
+   <iframe width="560" height="315" src="http://www.youtube.com/embed/zsYjsgm4Psg" frameborder="0" allowfullscreen>
+   </iframe>
+</div>
+
+
+
+
+<div align="center">
+   <iframe width="960" height="715" src="https://www.emc3dev.com/cget_air/#c=indicator&f=presentielle&i=emp_sphere.part_sphere&s=2014&view=map56" frameborder="0" allowfullscreen>
+   </iframe>
+</div>
+tt
+
+t
+tt
+
+<iframe width='500' height='900' src="https://observatoire-territoires.shinyapps.io/shiny_migres_v2/" width="850" height="680" style="border: none;"></iframe>

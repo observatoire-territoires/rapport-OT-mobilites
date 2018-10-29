@@ -25,6 +25,8 @@ if (knitr:::is_latex_output()) {
 
 ```
 
+ou des iframes
 
+<iframe src='http://carto.observatoire-des-territoires.gouv.fr/#s=2010-2015;v=map56;i=insee_rp_evol_1968.var_pop;l=fr' ></iframe>
 
 Des citations à retrouver dans la biblio **bookdown** package [@R-bookdown] in this sample book, which was built on top of R Markdown and **knitr** [@xie2015].

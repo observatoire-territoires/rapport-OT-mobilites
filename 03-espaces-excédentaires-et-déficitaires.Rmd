@@ -154,7 +154,7 @@ COMMG_COG2016_METDOM2 <- COMMG_COG2016_METDOM %>%
   rbind(COMMG_DROM %>% select(DEPCOM=INSEE_COM) )
 
 
-## table de correspondance supracomm
+# table de correspondance supracomm
 
 library(readxl)
 # import grille densité

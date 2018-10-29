@@ -6,7 +6,4 @@ C'était vraiment très intéressant.
    <iframe width="560" height="315" src="<iframe width='600' height='600' src='https://statistiques-locales.insee.fr/?view=map4&indics=filosofi.d9&serie=2015&lang=fr&iframe=1'/>" frameborder="0" allowfullscreen>
    </iframe>
 </div>
-
-appli de diagnostic :
-
-<iframe width='1100' height='1000' src="https://observatoire-territoires.shinyapps.io/shiny_migres_v2/"  frameborder="0" allowfullscreen></iframe>
+ 
